@@ -71,9 +71,55 @@ const storeMessageData = async (fileJson) => {
     }
 };
 
+const getElapsedVoiceMinutes = (start, end) => {
+    const startNum = parseInt(start);
+    const endNum = parseInt(end);
+    if (endNum < 0) {
+        return 0;
+    }
+    const delta = endNum - startNum;
+    return ((delta / 1000) / 60) % 60;
+};
+
 const storeVoiceData = async (fileJson) => {
-    let statusCode = '200';
-    return statusCode;
+    const voiceDataMap = new Map();
+    const usersInBatch = [];
+    
+    fileJson.forEach(entry => {
+        if (!voiceDataMap.has(entry.authorId)) {
+            const userVoiceData = {
+                minutesInVoice: getElapsedVoiceMinutes(entry.joinedTimestamp, entry.leaveTimestamp),
+                displayNames: [entry.userDisplayName],
+            };
+            voiceDataMap.set(entry.authorId, userVoiceData);
+            usersInBatch.push(entry.authorId);
+        }
+    });
+    
+    for (const user of usersInBatch) {
+        const userVoiceData = voiceDataMap.get(user);
+        const params = {
+            TableName: tableName,
+            Key: {
+                "userId": user
+            },
+            UpdateExpression: 'SET minutesInVoice = :minutesInVoice, displayNames  = list_append(if_not_exists(displayNames, :emptyList), :displayNames)',
+            ExpressionAttributeValues: {
+                ':minutesInVoice': userVoiceData.minutesInVoice,
+                ':displayNames': userVoiceData.displayNames,
+                ':emptyList': [],
+            },
+            ReturnValues: 'UPDATED_NEW'
+        };
+        await documentClient.update(params, (err, data) => {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                console.log(data);
+            }
+        }).promise();
+    }
 };
 
 exports.handler = async (event, context) => {
@@ -92,7 +138,7 @@ exports.handler = async (event, context) => {
         await storeMessageData(s3FileJson);
     }
     else if (s3Params.Bucket === voiceBucket) {
-        //statusCode = await storeVoiceData(s3FileJson);
+        await storeVoiceData(s3FileJson);
     }
     console.log('done');
     return { statusCode, headers };
