@@ -104,11 +104,9 @@ const storeVoiceData = async (fileJson) => {
             Key: {
                 "userId": user
             },
-            UpdateExpression: 'SET minutesInVoice = if_not_exists(minutesInVoice, :zero) + :minutesInVoice, displayNames  = list_append(if_not_exists(displayNames, :emptyList), :displayNames)',
+            UpdateExpression: 'SET minutesInVoice = if_not_exists(minutesInVoice, :zero) + :minutesInVoice',
             ExpressionAttributeValues: {
                 ':minutesInVoice': userVoiceData.minutesInVoice,
-                ':displayNames': userVoiceData.displayNames,
-                ':emptyList': [],
                 ':zero': 0,
             },
             ReturnValues: 'UPDATED_NEW'
