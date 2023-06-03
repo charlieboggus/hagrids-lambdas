@@ -86,15 +86,16 @@ const storeVoiceData = async (fileJson) => {
     const usersInBatch = [];
     
     fileJson.forEach(entry => {
-        if (!voiceDataMap.has(entry.authorId)) {
+        if (!voiceDataMap.has(entry.userId)) {
             const userVoiceData = {
                 minutesInVoice: getElapsedVoiceMinutes(entry.joinedTimestamp, entry.leaveTimestamp),
                 displayNames: [entry.userDisplayName],
             };
-            voiceDataMap.set(entry.authorId, userVoiceData);
-            usersInBatch.push(entry.authorId);
+            voiceDataMap.set(entry.userId, userVoiceData);
+            usersInBatch.push(entry.userId);
         }
     });
+    console.log(JSON.stringify(usersInBatch));
     
     for (const user of usersInBatch) {
         const userVoiceData = voiceDataMap.get(user);
@@ -103,14 +104,16 @@ const storeVoiceData = async (fileJson) => {
             Key: {
                 "userId": user
             },
-            UpdateExpression: 'SET minutesInVoice = :minutesInVoice, displayNames  = list_append(if_not_exists(displayNames, :emptyList), :displayNames)',
+            UpdateExpression: 'SET minutesInVoice = if_not_exists(minutesInVoice, :zero) + :minutesInVoice, displayNames  = list_append(if_not_exists(displayNames, :emptyList), :displayNames)',
             ExpressionAttributeValues: {
                 ':minutesInVoice': userVoiceData.minutesInVoice,
                 ':displayNames': userVoiceData.displayNames,
                 ':emptyList': [],
+                ':zero': 0,
             },
             ReturnValues: 'UPDATED_NEW'
         };
+        console.log(params);
         await documentClient.update(params, (err, data) => {
             if (err) {
                 console.log(err);
