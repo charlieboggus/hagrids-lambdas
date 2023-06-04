@@ -1,15 +1,13 @@
 const AWS = require('aws-sdk');
 const dynamo = new AWS.DynamoDB.DocumentClient();
-
 const cowboyToken = process.env.COWBOY_TOKEN;
 const tableName = process.env.TABLE_NAME;
 
 exports.handler = async (event, context) => {
-    const token = event.body.token
+    const token = event.body.token;
     if (token !== cowboyToken) {
         return { statusCode: '200' };
     }
-    
     const updateCommand = {
         TableName: tableName,
         Key: {
@@ -24,11 +22,11 @@ exports.handler = async (event, context) => {
     };
     const response = await dynamo.update(updateCommand, (err, data) => {
         if (err) {
-            console.log(`Error: ${err}`)
+            console.log(`Error: ${err}`);
         }
         else {
-            console.log(`Data: ${data}`)
+            console.log(`Data: ${data}`);
         }
     }).promise();
-    return response;
+    return { statusCode: '200' };
 };

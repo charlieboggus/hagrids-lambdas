@@ -22,7 +22,7 @@ const storeMessageData = async (fileJson) => {
     const usersInBatch = [];
     
     // Build our message data map
-    fileJson.forEach(message => {
+    for (const message of fileJson) {
         if (!messageDataMap.has(message.authorId)) {
             const userMessageData = {
                 messageCount: 0,
@@ -38,7 +38,7 @@ const storeMessageData = async (fileJson) => {
             userMessageData.messages.push(message.message);
             messageDataMap.set(message.authorId, userMessageData);
         }
-    });
+    }
     console.log('Built message data map');
     
     // upload the data for each user to dynamo
@@ -85,7 +85,7 @@ const storeVoiceData = async (fileJson) => {
     const voiceDataMap = new Map();
     const usersInBatch = [];
     
-    fileJson.forEach(entry => {
+    for (const entry of fileJson) {
         if (!voiceDataMap.has(entry.userId)) {
             const userVoiceData = {
                 minutesInVoice: getElapsedVoiceMinutes(entry.joinedTimestamp, entry.leaveTimestamp),
@@ -94,7 +94,7 @@ const storeVoiceData = async (fileJson) => {
             voiceDataMap.set(entry.userId, userVoiceData);
             usersInBatch.push(entry.userId);
         }
-    });
+    }
     console.log(JSON.stringify(usersInBatch));
     
     for (const user of usersInBatch) {
